@@ -1,0 +1,29 @@
+import 'source-map-support/register'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
+import * as middy from 'middy'
+import { cors, httpErrorHandler } from 'middy/middlewares'
+import { createAttachmentPresignedUrl } from '../../businessLogic/Heros'
+import { getUserId } from '../utils'
+
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const heroId = event.pathParameters.heroId
+    const userId = getUserId(event);
+    const presignedUrl = await createAttachmentPresignedUrl(userId, heroId);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        uploadUrl: presignedUrl,
+      })
+    }
+  }
+)
+
+handler
+  .use(httpErrorHandler())
+  .use(
+    cors({
+      credentials: true
+    })
+  )
